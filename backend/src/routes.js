@@ -3,28 +3,37 @@ const multer = require("multer");
 const multerConfig = require('../config/multer');
 
 const upload = multer(multerConfig);
+const Image = require("../models/Image");
 
-routes.get("/", (req, res) => {
-    const response = {
-        message: "Welcome to image app",
-    }
-    return res.json(response);
+routes.get("/", (_, res) => {
+    return res.json({ message: "Welcome to image app" });
 });
 
-routes.get("/images", (req, res) => {
-    const images = [
-        {     
-            name: "test 1",
-            size: "1mb",
-            key: "test1.jpg",
-            url: "" 
-        },
-    ]
-    return res.json(images);
- });
+routes.get("/images", async (_, res) => {
+    const images = await Image.find();
 
-routes.post("/images", upload.single("file"), (req, res) => {
-    return res.json(req.file);
+    return res.json(images);
+});
+
+routes.post("/images", upload.single("file"), async (req, res) => {
+    const { originalname: name, size, key, path: url } = req.file;
+
+    const image = await Image.create({
+        name,
+        size,
+        key,
+        url
+    });
+
+    return res.json(image);
+});
+
+routes.delete("/images/:id", async (req, res) => {
+    const image = await Image.findById(req.params.id);
+
+    await image.remove();
+
+    return res.json({ message: `Delete ${req.params.id} successful!` });
 });
 
 module.exports = routes
